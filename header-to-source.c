@@ -85,16 +85,19 @@ int main(int argc, char **argv)
         if (!strcmp(str, "typedef")) {
             fprintf(g, "%s%c", str, c);
             while (c != ';') {
-                char eof = 0;
                 if(fscanf(f, "%c", &c) == EOF) {
                     c = ';';
-                    eof = 1;
                 }
                 fprintf(g, "%c", c);
-                if (eof) {
-                    fprintf(g, "\n");
-                }
             }
+
+            while (c != '\n') {
+                if(fscanf(f, "%c", &c) == EOF) {
+                    c = '\n';
+                }
+                fprintf(g, "%c", c);
+            }
+
             continue;
         }
 
