@@ -9,9 +9,9 @@
 
 typedef struct {
     int num_braces; /* in { ... } */
-    unsigned int open_parenthensis:1; /* check for '(' */
-    unsigned int closed_parenthensis:1; /* check for ')' */
-    unsigned int star:1 /* check for '*' */
+    unsigned int open_parenthesis:1; /* check for '(' */
+    unsigned int closed_parenthesis:1; /* check for ')' */
+    unsigned int star:1; /* check for '*' */
     unsigned int __cplusplus:1; /* check for extern "C" { */
     unsigned int is_typedef:1; /* check for typedef */
     unsigned int define_function:1; /* make sure we don't have a function pointer */
@@ -27,7 +27,7 @@ int main(int argc, char **argv)
     FILE *f = fopen(argv[1], "r");
     FILE *g = fopen(argv[2], "w");
 
-    state_t state = (state_t){};
+    state_t state = (state_t){0};
 
     for (;;) {
         char str[WORD_MAX + sizeof(FUNCTION_BODY) + 1];
@@ -55,11 +55,11 @@ int main(int argc, char **argv)
                 }
 
                 if (c == '*') {
-                    c = '\0'; /* '\0' != '*' */
+                    c = '\0'; /* to keep looping */
                 }
 
                 if (c == '/') {
-                    c = '*'; /* '/' != '*' */
+                    c = '*'; /* to exit loop */
                 }
             }
             continue;
@@ -91,31 +91,32 @@ int main(int argc, char **argv)
         }
 
         if (state.num_braces) {
-            fprintf(g, "%s%c", s, c);
-            state.open_parenthensis = 0;
-            state.closed_parenthensis = 0;
+            fprintf(g, "%s%c", str, c);
+            state.open_parenthesis = 0;
+            state.closed_parenthesis = 0;
             state.star = 0;
             continue;
         }
 
-        if (!state.open_parenthensis && strchr(str '(')) {
-            state.open_parenthensis = 1;
+        if (!state.open_parenthesis && strchr(str, '(')) {
+            state.open_parenthesis = 1;
         }
 
-        if (!state.closed_parenthensis && strchr(str ')')) {
-            state.closed_parenthensis = 1;
+        if (!state.closed_parenthesis && strchr(str, ')')) {
+            state.closed_parenthesis = 1;
         }
 
-        if (!state.star && strchr(str '*')) {
+        if (!state.star && strchr(str, '*')) {
             state.star = 1;
         }
 
-        state.define_function = state.closed_parenthesis && (!state.star || (strchr(str ')') < strchr(str '*')));
+        state.define_function = state.closed_parenthesis && (!state.star || (strchr(str, ')') < strchr(str, '*')));
 
-        if (state.closed_parenthesis && (!state.star || (strchr(str ')') < strchr(str '*')))) { /* not a function pointer */
+        if (state.define_function) { /* not a function pointer */
             char *test_char = strrchr(str, ';');
             if (test_char) {
                 strcpy(test_char, FUNCTION_BODY);
+                state.define_function = 0;
             }
         }
 
@@ -129,7 +130,7 @@ int main(int argc, char **argv)
             continue;
         }
 
-        fprintf(g, "%s%c", s, c);
+        fprintf(g, "%s%c", str, c);
     }
 
     /* never reached */
