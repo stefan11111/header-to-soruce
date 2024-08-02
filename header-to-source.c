@@ -66,6 +66,7 @@ int main(int argc, char **argv)
 
         if (!strcmp(str, "__cplusplus")) {
             state.__cplusplus = 1;
+            fprintf(g, "%s%c", str, c);
             continue;
         }
 
@@ -101,11 +102,11 @@ int main(int argc, char **argv)
             state.open_parenthesis = 1;
         }
 
-        if (!state.closed_parenthesis && strchr(str, ')')) {
+        if (state.open_parenthesis && !state.closed_parenthesis && strchr(str, ')')) {
             state.closed_parenthesis = 1;
         }
 
-        if (!state.star && strchr(str, '*')) {
+        if (state.open_parenthesis && !state.star && strchr(str, '*')) {
             state.star = 1;
         }
 
@@ -121,6 +122,7 @@ int main(int argc, char **argv)
 
         if (!strcmp(str, "typedef")) {
             state.is_typedef = 1;
+            fprintf(g, "%s%c", str, c);
             continue;
         }
         state.is_typedef = 0;
