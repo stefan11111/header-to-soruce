@@ -55,7 +55,7 @@ int main(int argc, char **argv)
             continue;
         }
 
-        if (!strncmp(str, "/\*", sizeof("/\*") - 1)) { /* ignore comments */
+        if (!strncmp(str, "/" "*", sizeof("/" "*") - 1)) { /* ignore comments */
             while (c != '*') {
                 if(fscanf(f, "%c", &c) == EOF) {
                     return 0;
@@ -70,7 +70,6 @@ int main(int argc, char **argv)
                 }
             }
             fprintf(g, " ");
-            reset_parenthesis();
             goto print_char;
         }
 
