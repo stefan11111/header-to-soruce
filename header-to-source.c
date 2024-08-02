@@ -45,6 +45,7 @@ int main(int argc, char **argv)
                     c = '\n';
                 }
             }
+            fprintf(g, "\n");
             continue;
         }
 
@@ -58,16 +59,17 @@ int main(int argc, char **argv)
                     continue;
                 }
                 if((fscanf(f, "%c", &c) == EOF) || (c == '/')) {
-                    c = '*'; /* to exit loop */
+                    c = ' '; /* for print_char */
+                    break;
                 }
             }
-            continue;
+            fprintf(g, " ");
+            goto print_char;
         }
 
         if (!strcmp(str, "__cplusplus")) {
             state.__cplusplus = 1;
-            fprintf(g, "%s%c", str, c);
-            continue;
+            goto print;
         }
 
         for (char *p = str; *p; p++) {
@@ -91,11 +93,10 @@ int main(int argc, char **argv)
         }
 
         if (state.num_braces) {
-            fprintf(g, "%s%c", str, c);
             state.open_parenthesis = 0;
             state.closed_parenthesis = 0;
             state.star = 0;
-            continue;
+            goto print;
         }
 
         if (!state.open_parenthesis && strchr(str, '(')) {
@@ -122,16 +123,32 @@ int main(int argc, char **argv)
 
         if (!strcmp(str, "typedef")) {
             state.is_typedef = 1;
-            fprintf(g, "%s%c", str, c);
-            continue;
+            goto print;
         }
         state.is_typedef = 0;
 
         if (!state.is_typedef && !strcmp(str, "extern")) { /* define externs */
             continue;
         }
-
+print:
         fprintf(g, "%s%c", str, c);
+        if (c == '\n') {
+            continue;
+        }
+print_char:
+        while (c == ' ') { /* remove extra spaces */
+            if (fscanf(f, "%c", &c) == EOF) { /* missing '\n' terminator */
+                break;
+            }
+        }
+        if (c == '\n') {
+            fprintf(g, "\n");
+            continue;
+        }
+
+        if (ungetc(c, f) == EOF) {
+            str[0] = c;
+        }
     }
 
     /* never reached */
