@@ -13,7 +13,6 @@ typedef struct {
     unsigned int closed_parenthesis:1; /* check for ')' */
     unsigned int star:1; /* check for '*' */
     unsigned int __cplusplus:1; /* check for extern "C" { */
-    unsigned int is_typedef:1; /* check for typedef */
     unsigned int define_function:1; /* make sure we don't have a function pointer */
 } state_t;
 
@@ -83,6 +82,22 @@ int main(int argc, char **argv)
             continue;
         }
 
+        if (!strcmp(str, "typedef")) {
+            fprintf(g, "%s%c", str, c);
+            while (c != ';') {
+                char eof = 0;
+                if(fscanf(f, "%c", &c) == EOF) {
+                    c = ';';
+                    eof = 1;
+                }
+                fprintf(g, "%c", c);
+                if (eof) {
+                    fprintf(g, "\n");
+                }
+            }
+            continue;
+        }
+
         for (char *p = str; *p; p++) {
             if (*p == '{') {
                 if (!state.__cplusplus) {
@@ -135,13 +150,7 @@ int main(int argc, char **argv)
             }
         }
 
-        if (!strcmp(str, "typedef")) {
-            state.is_typedef = 1;
-            goto print;
-        }
-        state.is_typedef = 0;
-
-        if (!state.is_typedef && !strcmp(str, "extern")) { /* define externs */
+        if (!strcmp(str, "extern")) { /* define externs */
             continue;
         }
 print:
