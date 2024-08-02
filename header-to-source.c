@@ -136,7 +136,7 @@ int main(int argc, char **argv)
             goto print;
         }
 
-        if (!state.open_parenthesis && strchr(str, '(')) {
+        for (char *p = strchr(str, '('); p; p = strchr(p + 1, '(')) {
             state.open_parenthesis++;
         }
 
@@ -152,13 +152,17 @@ int main(int argc, char **argv)
                                                                (state.closed_parenthesis &&
                                                                (!state.star || (strchr(str, ')') < strchr(str, '*')))));
 
-        if (state.define_function) { /* not a function pointer */
-            char *test_char = strrchr(str, ';');
-            if (test_char) {
-                strcpy(test_char, FUNCTION_BODY);
-                reset_parenthesis();
-            }
+        char *test_char = strrchr(str, ';');
+
+        if (state.define_function && test_char) { /* not a function pointer */
+            strcpy(test_char, FUNCTION_BODY);
+            reset_parenthesis();
         }
+
+        if (!state.define_function && test_char) { /* function pointer */
+            reset_parenthesis();
+        }
+
 
         if (!strcmp(str, "extern")) { /* define externs */
             continue;
