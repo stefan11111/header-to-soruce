@@ -118,6 +118,9 @@ int main(int argc, char **argv)
             if (test_char) {
                 strcpy(test_char, FUNCTION_BODY);
                 state.define_function = 0;
+                state.open_parenthesis = 0;
+                state.closed_parenthesis = 0;
+                state.star = 0;
             }
         }
 
