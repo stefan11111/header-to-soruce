@@ -72,6 +72,17 @@ int main(int argc, char **argv)
             goto print;
         }
 
+        if (str[0] == '#') {
+            fprintf(g, "%s%c", str, c);
+            while (c != '\n') {
+                if(fscanf(f, "%c", &c) == EOF) {
+                    c = '\n';
+                }
+                fprintf(g, "%c", c);
+            }
+            continue;
+        }
+
         for (char *p = str; *p; p++) {
             if (*p == '{') {
                 if (!state.__cplusplus) {
