@@ -54,11 +54,10 @@ int main(int argc, char **argv)
                     return 0;
                 }
 
-                if (c == '*') {
-                    c = '\0'; /* to keep looping */
+                if (c != '*') {
+                    continue;
                 }
-
-                if (c == '/') {
+                if((fscanf(f, "%c", &c) == EOF) || (c == '/')) {
                     c = '*'; /* to exit loop */
                 }
             }
