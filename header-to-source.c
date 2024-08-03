@@ -56,6 +56,13 @@ int main(int argc, char **argv)
         }
 
         if (!strncmp(str, "/" "*", sizeof("/" "*") - 1)) { /* ignore comments */
+            char *ptr = strstr(str, "*/");
+            if (ptr) {
+                char *dst = str;
+                char *src = ptr + sizeof("*/") - 1;
+                while ((*dst++ = *src++)); /* -Wparentheses */
+                goto past_comments;
+            }
             while (c != '*') {
                 if(fscanf(f, "%c", &c) == EOF) {
                     return 0;
@@ -72,7 +79,7 @@ int main(int argc, char **argv)
             fprintf(g, " ");
             goto print_char;
         }
-
+past_comments:
         if (str[0] == '#') {
             fprintf(g, "%s%c", str, c);
             char *cpp = "__cplusplus";
