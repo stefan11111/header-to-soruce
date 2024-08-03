@@ -73,18 +73,26 @@ int main(int argc, char **argv)
             goto print_char;
         }
 
-        if (!strcmp(str, "__cplusplus")) {
-            state.__cplusplus = 1;
-            reset_parenthesis();
-            goto print;
-        }
-
         if (str[0] == '#') {
             fprintf(g, "%s%c", str, c);
+            char *cpp = "__cplusplus";
+            unsigned char ind = 0;
             while (c != '\n') {
                 if(fscanf(f, "%c", &c) == EOF) {
                     c = '\n';
                 }
+
+                if(cpp[ind] == c) {
+                    ind++;
+                }
+                else {
+                    ind = 0;
+                }
+
+                if(cpp[ind] == '\0') {
+                    state.__cplusplus = 1;
+                }
+
                 fprintf(g, "%c", c);
             }
             reset_parenthesis();
