@@ -3,6 +3,7 @@
 
 #define WORD_MAX 512
 #define FUNCTION_BODY " { return 0; }"
+#define VOID_FUNCTION_BODY " {}"
 
 #define _STR(x) #x
 #define STR(x) _STR(x)
@@ -10,14 +11,18 @@
 typedef struct {
     int num_braces; /* in { ... } */
     int open_parenthesis; /* check for '(' */
+    unsigned int is_void:1; /* check if the function type contains void */
+    unsigned int is_not_void_function:1; /* check if the function is not void* */
     unsigned int closed_parenthesis:1; /* check for ')' */
     unsigned int star:1; /* check for '*' */
-    unsigned int __cplusplus:1; /* check for extern "C" { */
     unsigned int define_function:1; /* make sure we don't have a function pointer */
+    unsigned int __cplusplus:1; /* check for extern "C" { */
 } state_t;
 
 #define reset_parenthesis() \
     state.open_parenthesis = 0; \
+    state.is_void = 0; \
+    state.is_not_void_function = 0; \
     state.closed_parenthesis = 0; \
     state.star = 0; \
     state.define_function = 0; \
@@ -154,12 +159,20 @@ past_comments:
             state.open_parenthesis++;
         }
 
-        if (state.open_parenthesis && !state.closed_parenthesis && strchr(str, ')')) {
+        if (state.open_parenthesis && strchr(str, ')')) {
             state.closed_parenthesis = 1;
         }
 
-        if (state.open_parenthesis && !state.star && strchr(str, '*')) {
+        if (state.open_parenthesis && strchr(str, '*')) {
             state.star = 1;
+        }
+
+        if (!state.open_parenthesis && strstr(str, "void")) {
+            state.is_void = 1;
+        }
+
+        if (state.is_void && !state.open_parenthesis && strchr(str, '*')) {
+            state.is_not_void_function = 1;
         }
 
         state.define_function = (state.open_parenthesis == 1 ||
@@ -169,7 +182,9 @@ past_comments:
         char *test_char = strrchr(str, ';');
 
         if (state.define_function && test_char) { /* not a function pointer */
-            strcpy(test_char, FUNCTION_BODY);
+
+            (!state.is_not_void_function && state.is_void) ? strcpy(test_char, VOID_FUNCTION_BODY) :
+                                                             strcpy(test_char, FUNCTION_BODY);
             reset_parenthesis();
         }
 
