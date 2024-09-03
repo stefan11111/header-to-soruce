@@ -11,20 +11,23 @@
 typedef struct {
     int num_braces; /* in { ... } */
     int open_parenthesis; /* check for '(' */
+    int star; /* check for '*' */
+    unsigned int is_function_pointer:2; /* check whether between the first '(' and the first '*' */
+                                        /* there are characters other than ' ' and '\n' */
     unsigned int is_void:1; /* check if the function type contains void */
     unsigned int is_not_void_function:1; /* check if the function is not void* */
     unsigned int closed_parenthesis:1; /* check for ')' */
-    unsigned int star:1; /* check for '*' */
     unsigned int define_function:1; /* make sure we don't have a function pointer */
     unsigned int __cplusplus:1; /* check for extern "C" { */
 } state_t;
 
 #define reset_parenthesis() \
     state.open_parenthesis = 0; \
+    state.star = 0; \
+    state.is_function_pointer = 0; \
     state.is_void = 0; \
     state.is_not_void_function = 0; \
     state.closed_parenthesis = 0; \
-    state.star = 0; \
     state.define_function = 0; \
 
 int main(int argc, char **argv)
@@ -159,12 +162,26 @@ past_comments:
             state.open_parenthesis++;
         }
 
+        if (state.open_parenthesis && !state.star && state.is_function_pointer != 2) {
+            state.is_function_pointer = 1; /* mark that it needs to be checked */
+        }
+
+        if (state.open_parenthesis && !state.star && state.is_function_pointer == 1) {
+            char *q = strchr(str, '('); /* if there are more that 1 '(' , the result of this doesn't matter */
+            for (char *p = q ? q + 1 : str ; *p && *p != '*'; p++) {
+                if (*p != ' ' && *p != '\n') {
+                    state.is_function_pointer = 2; /* checked and is not function pointer */
+                    break;
+                }
+            }
+        }
+
         if (state.open_parenthesis && strchr(str, ')')) {
             state.closed_parenthesis = 1;
         }
 
-        if (state.open_parenthesis && strchr(str, '*')) {
-            state.star = 1;
+        if (state.open_parenthesis && !state.star && strchr(str, '*')) {
+            state.star = state.open_parenthesis;
         }
 
         if (!state.open_parenthesis && strstr(str, "void")) {
@@ -175,9 +192,9 @@ past_comments:
             state.is_not_void_function = 1;
         }
 
-        state.define_function = (state.open_parenthesis == 1 ||
-                                                               (state.closed_parenthesis &&
-                                                               (!state.star || (strchr(str, ')') < strchr(str, '*')))));
+        state.define_function = ((state.open_parenthesis == 1) ||
+                                 (state.closed_parenthesis && state.star != 1) ||
+                                 (state.is_function_pointer == 2));
 
         char *test_char = strrchr(str, ';');
 
